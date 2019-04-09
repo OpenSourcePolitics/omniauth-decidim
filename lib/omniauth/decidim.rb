@@ -2,3 +2,4 @@
 
 require "omniauth/decidim/version"
 require "omniauth/strategies/decidim"
+require "omniauth/strategies/publik"
