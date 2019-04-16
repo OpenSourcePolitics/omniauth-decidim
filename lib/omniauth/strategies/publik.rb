@@ -8,32 +8,39 @@ module OmniAuth
     class Publik < OmniAuth::Strategies::OAuth2
       args [:client_id, :client_secret, :site]
 
-      option :name, :decidim
+      option :name, :publik
       option :site, nil
       option :client_options, {}
 
       uid do
-        raw_info["id"]
+        raw_info["sub"]
       end
 
       info do
         {
           email: raw_info["email"],
-          nickname: raw_info["nickname"],
-          name: raw_info["name"],
-          image: raw_info["image"]
+          nickname: Decidim::UserBaseEntity.nicknamize(parse_nickname),
+          name: parse_name
         }
+      end
+
+      def parse_name
+        "#{raw_info["given_name"]} #{raw_info["family_name"]}"
+      end
+
+      def parse_nickname
+        raw_info["preferred_username"].blank? ? parse_name : raw_info["preferred_username"]
       end
 
       def client
         options.client_options[:site] = options.site
-        options.client_options[:authorize_url] = URI.join(options.site, "/idp/oidc/authorize").to_s
-        options.client_options[:token_url] = URI.join(options.site, "/idp/oidc/token").to_s
+        options.client_options[:authorize_url] = URI.join(options.site, "/idp/oidc/authorize/").to_s
+        options.client_options[:token_url] = URI.join(options.site, "/idp/oidc/token/").to_s
         super
       end
 
       def raw_info
-        @raw_info ||= access_token.get("/idp/oidc/user_info").parsed
+        @raw_info ||= access_token.get("/idp/oidc/user_info/").parsed
       end
 
       # https://github.com/intridea/omniauth-oauth2/issues/81
